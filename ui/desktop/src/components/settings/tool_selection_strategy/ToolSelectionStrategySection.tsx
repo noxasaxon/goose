@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { View, ViewOptions } from '../../../App';
 import { useConfig } from '../../ConfigContext';
-import { getApiUrl, getSecretKey } from '../../../config';
+import { getApiUrlSync, getSecretKeySync } from '../../../config';
 
 interface ToolSelectionStrategySectionProps {
   setView: (view: View, viewOptions?: ViewOptions) => void;
@@ -53,11 +53,11 @@ export const ToolSelectionStrategySection = ({
 
       // Then update the backend
       try {
-        const response = await fetch(getApiUrl('/agent/update_router_tool_selector'), {
+        const response = await fetch(getApiUrlSync('/agent/update_router_tool_selector'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Secret-Key': getSecretKey(),
+            'X-Secret-Key': getSecretKeySync(),
           },
         });
 

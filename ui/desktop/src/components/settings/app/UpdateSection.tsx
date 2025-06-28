@@ -50,8 +50,9 @@ export default function UpdateSection() {
     // Listen for updater events
     window.electron.onUpdaterEvent((event) => {
       console.log('Updater event:', event);
+      const updaterEvent = event as { event: string; data?: unknown };
 
-      switch (event.event) {
+      switch (updaterEvent.event) {
         case 'checking-for-update':
           setUpdateStatus('checking');
           break;
@@ -60,7 +61,7 @@ export default function UpdateSection() {
           setUpdateStatus('idle');
           setUpdateInfo((prev) => ({
             ...prev,
-            latestVersion: (event.data as UpdateEventData)?.version,
+            latestVersion: (updaterEvent.data as UpdateEventData)?.version,
             isUpdateAvailable: true,
           }));
           break;
@@ -75,7 +76,7 @@ export default function UpdateSection() {
 
         case 'download-progress':
           setUpdateStatus('downloading');
-          setProgress((event.data as UpdateEventData)?.percent || 0);
+          setProgress((updaterEvent.data as UpdateEventData)?.percent || 0);
           break;
 
         case 'update-downloaded':
@@ -87,7 +88,7 @@ export default function UpdateSection() {
           setUpdateStatus('error');
           setUpdateInfo((prev) => ({
             ...prev,
-            error: String(event.data || 'An error occurred'),
+            error: String(updaterEvent.data || 'An error occurred'),
           }));
           setTimeout(() => setUpdateStatus('idle'), 5000);
           break;

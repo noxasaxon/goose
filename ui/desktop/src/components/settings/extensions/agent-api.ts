@@ -1,5 +1,5 @@
 import { ExtensionConfig } from '../../../api/types.gen';
-import { getApiUrl, getSecretKey } from '../../../config';
+import { getApiUrlSync, getSecretKeySync } from '../../../config';
 import { toastService, ToastServiceOptions } from '../../../toasts';
 import { replaceWithShims } from './utils';
 
@@ -42,11 +42,11 @@ export async function extensionApiCall(
 
   try {
     // Step 2: Make the API call
-    const response = await fetch(getApiUrl(endpoint), {
+    const response = await fetch(getApiUrlSync(endpoint), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Secret-Key': getSecretKey(),
+        'X-Secret-Key': getSecretKeySync(),
       },
       body: JSON.stringify(payload),
     });

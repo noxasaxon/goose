@@ -20,6 +20,7 @@ import type {
   ExtensionConfig,
 } from '../api/types.gen';
 import { removeShims } from './settings/extensions/utils';
+import { configService } from '../services/configService';
 
 export type { ExtensionConfig } from '../api/types.gen';
 
@@ -27,15 +28,6 @@ export type { ExtensionConfig } from '../api/types.gen';
 export type FixedExtensionEntry = ExtensionConfig & {
   enabled: boolean;
 };
-
-// Initialize client configuration
-client.setConfig({
-  baseUrl: window.appConfig.get('GOOSE_API_HOST') + ':' + window.appConfig.get('GOOSE_PORT'),
-  headers: {
-    'Content-Type': 'application/json',
-    'X-Secret-Key': window.appConfig.get('secretKey'),
-  },
-});
 
 interface ConfigContextType {
   config: ConfigResponse['config'];
@@ -71,6 +63,7 @@ export const ConfigProvider: React.FC<ConfigProviderProps> = ({ children }) => {
   const [config, setConfig] = useState<ConfigResponse['config']>({});
   const [providersList, setProvidersList] = useState<ProviderDetails[]>([]);
   const [extensionsList, setExtensionsList] = useState<FixedExtensionEntry[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const reloadConfig = useCallback(async () => {
     const response = await readAllConfig();
@@ -182,26 +175,46 @@ export const ConfigProvider: React.FC<ConfigProviderProps> = ({ children }) => {
   );
 
   useEffect(() => {
-    // Load all configuration data and providers on mount
+    // Initialize client and load all configuration data on mount
     (async () => {
-      // Load config
-      const configResponse = await readAllConfig();
-      setConfig(configResponse.data?.config || {});
-
-      // Load providers
       try {
-        const providersResponse = await providers();
-        setProvidersList(providersResponse.data || []);
-      } catch (error) {
-        console.error('Failed to load providers:', error);
-      }
+        // Initialize the API client with configuration from configService
+        const apiUrl = await configService.getApiUrl();
+        const secretKey = await configService.getSecretKey();
 
-      // Load extensions
-      try {
-        const extensionsResponse = await apiGetExtensions();
-        setExtensionsList(extensionsResponse.data?.extensions || []);
+        client.setConfig({
+          baseUrl: apiUrl,
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Secret-Key': secretKey,
+          },
+        });
+
+        setIsInitialized(true);
+
+        // Load config
+        const configResponse = await readAllConfig();
+        setConfig(configResponse.data?.config || {});
+
+        // Load providers
+        try {
+          const providersResponse = await providers();
+          setProvidersList(providersResponse.data || []);
+        } catch (error) {
+          console.error('Failed to load providers:', error);
+        }
+
+        // Load extensions
+        try {
+          const extensionsResponse = await apiGetExtensions();
+          setExtensionsList(extensionsResponse.data?.extensions || []);
+        } catch (error) {
+          console.error('Failed to load extensions:', error);
+        }
       } catch (error) {
-        console.error('Failed to load extensions:', error);
+        console.error('Failed to initialize configuration:', error);
+        // Re-throw to let error boundary handle it
+        throw error;
       }
     })();
   }, []);
@@ -253,6 +266,24 @@ export const ConfigProvider: React.FC<ConfigProviderProps> = ({ children }) => {
     getExtensions,
     reloadConfig,
   ]);
+
+  // Show loading state while initializing
+  if (!isInitialized) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+          fontSize: '16px',
+          color: '#666',
+        }}
+      >
+        Initializing Goose...
+      </div>
+    );
+  }
 
   return <ConfigContext.Provider value={contextValue}>{children}</ConfigContext.Provider>;
 };

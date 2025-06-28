@@ -17,6 +17,15 @@
     "fs:allow-remove",
     "fs:allow-rename",
     "fs:allow-copy-file",
+    {
+      "identifier": "fs:scope",
+      "allow": [
+        { "path": "$HOME/**" },
+        { "path": "$APPDATA/**" },
+        { "path": "$TEMP/**" },
+        { "path": "$APPCONFIG/**" }
+      ]
+    },
     "dialog:default",
     "shell:default",
     "shell:allow-open",

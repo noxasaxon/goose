@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useConfig } from '../components/ConfigContext';
-import { getApiUrl, getSecretKey } from '../config';
+import { getApiUrlSync, getSecretKeySync } from '../config';
 import { useDictationSettings } from './useDictationSettings';
 
 interface UseWhisperOptions {
@@ -116,7 +116,7 @@ export const useWhisper = ({ onTranscription, onError, onSizeWarning }: UseWhisp
         let endpoint = '';
         let headers: Record<string, string> = {
           'Content-Type': 'application/json',
-          'X-Secret-Key': getSecretKey(),
+          'X-Secret-Key': getSecretKeySync(),
         };
         let body: Record<string, string> = {
           audio: base64Audio,
@@ -135,7 +135,7 @@ export const useWhisper = ({ onTranscription, onError, onSizeWarning }: UseWhisp
             throw new Error(`Unsupported provider: ${dictationSettings.provider}`);
         }
 
-        const response = await fetch(getApiUrl(endpoint), {
+        const response = await fetch(getApiUrlSync(endpoint), {
           method: 'POST',
           headers,
           body: JSON.stringify(body),

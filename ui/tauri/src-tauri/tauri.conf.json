@@ -12,6 +12,7 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "Goose",
         "width": 750,
         "height": 800,
@@ -40,5 +41,18 @@
     "externalBin": [
       "binaries/goosed"
     ]
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [],
+      "pubkey": ""
+    },
+    "deep-link": {
+      "desktop": {
+        "schemes": [
+          "goose"
+        ]
+      }
+    }
   }
 }

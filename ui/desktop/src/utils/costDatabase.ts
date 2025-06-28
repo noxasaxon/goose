@@ -1,5 +1,5 @@
 // Import the proper type from ConfigContext
-import { getApiUrl, getSecretKey } from '../config';
+import { getApiUrlSync, getSecretKeySync } from '../config';
 
 export interface ModelCostInfo {
   input_token_cost: number; // Cost per token for input (in USD)
@@ -158,8 +158,8 @@ async function fetchPricingForModel(
   model: string
 ): Promise<ModelCostInfo | null> {
   try {
-    const apiUrl = getApiUrl('/config/pricing');
-    const secretKey = getSecretKey();
+    const apiUrl = getApiUrlSync('/config/pricing');
+    const secretKey = getSecretKeySync();
 
     console.log(`Fetching pricing for ${provider}/${model} from ${apiUrl}`);
 
@@ -294,8 +294,8 @@ export async function initializeCostDatabase(): Promise<void> {
     console.log(`Initializing cost database with ${modelsToFetch.size} models...`);
 
     // Fetch only the pricing we need
-    const apiUrl = getApiUrl('/config/pricing');
-    const secretKey = getSecretKey();
+    const apiUrl = getApiUrlSync('/config/pricing');
+    const secretKey = getSecretKeySync();
 
     const headers: HeadersInit = { 'Content-Type': 'application/json' };
     if (secretKey) {
@@ -476,8 +476,8 @@ export async function fetchAndCachePricing(
  */
 export async function refreshPricing(): Promise<boolean> {
   try {
-    const apiUrl = getApiUrl('/config/pricing');
-    const secretKey = getSecretKey();
+    const apiUrl = getApiUrlSync('/config/pricing');
+    const secretKey = getSecretKeySync();
 
     const headers: HeadersInit = { 'Content-Type': 'application/json' };
     if (secretKey) {

@@ -5,7 +5,7 @@ import { Settings, RefreshCw, ExternalLink } from 'lucide-react';
 import Modal from '../../Modal';
 import UpdateSection from './UpdateSection';
 import { COST_TRACKING_ENABLED, UPDATES_ENABLED } from '../../../updates';
-import { getApiUrl, getSecretKey } from '../../../config';
+import { getApiUrlSync, getSecretKeySync } from '../../../config';
 
 interface AppSettingsSectionProps {
   scrollToSection?: string;
@@ -42,8 +42,8 @@ export default function AppSettingsSection({ scrollToSection }: AppSettingsSecti
 
   const checkPricingStatus = async () => {
     try {
-      const apiUrl = getApiUrl('/config/pricing');
-      const secretKey = getSecretKey();
+      const apiUrl = getApiUrlSync('/config/pricing');
+      const secretKey = getSecretKeySync();
 
       const headers: HeadersInit = { 'Content-Type': 'application/json' };
       if (secretKey) {
@@ -71,8 +71,8 @@ export default function AppSettingsSection({ scrollToSection }: AppSettingsSecti
   const handleRefreshPricing = async () => {
     setIsRefreshing(true);
     try {
-      const apiUrl = getApiUrl('/config/pricing');
-      const secretKey = getSecretKey();
+      const apiUrl = getApiUrlSync('/config/pricing');
+      const secretKey = getSecretKeySync();
 
       const headers: HeadersInit = { 'Content-Type': 'application/json' };
       if (secretKey) {

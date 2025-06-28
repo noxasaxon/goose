@@ -1,4 +1,4 @@
-import { getApiUrl, getSecretKey } from './config';
+import { getApiUrlSync, getSecretKeySync } from './config';
 import { toast } from 'react-toastify';
 
 import builtInExtensionsData from './built-in-extensions.json';
@@ -83,11 +83,11 @@ export async function addExtension(
     let toastId;
     if (!silent) toastId = toastLoading({ title: extension.name, msg: 'Adding extension...' });
 
-    const response = await fetch(getApiUrl('/extensions/add'), {
+    const response = await fetch(getApiUrlSync('/extensions/add'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Secret-Key': getSecretKey(),
+        'X-Secret-Key': getSecretKeySync(),
       },
       body: JSON.stringify(config),
     });
@@ -160,11 +160,11 @@ export async function addExtension(
 
 export async function removeExtension(name: string, silent: boolean = false): Promise<Response> {
   try {
-    const response = await fetch(getApiUrl('/extensions/remove'), {
+    const response = await fetch(getApiUrlSync('/extensions/remove'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Secret-Key': getSecretKey(),
+        'X-Secret-Key': getSecretKeySync(),
       },
       body: JSON.stringify(sanitizeName(name)),
     });

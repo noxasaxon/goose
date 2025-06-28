@@ -1,4 +1,4 @@
-import { getApiUrl, getSecretKey } from '../config';
+import { getApiUrlSync, getSecretKeySync } from '../config';
 
 const getQuestionClassifierPrompt = (messageContent: string): string => `
 You are a simple classifier that takes content and decides if it is asking for input 
@@ -154,11 +154,11 @@ Response:`;
  * @returns Promise<string> The AI's response
  */
 export async function ask(prompt: string): Promise<string> {
-  const response = await fetch(getApiUrl('/ask'), {
+  const response = await fetch(getApiUrlSync('/ask'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Secret-Key': getSecretKey(),
+      'X-Secret-Key': getSecretKeySync(),
     },
     body: JSON.stringify({ prompt }),
   });
