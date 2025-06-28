@@ -75,13 +75,39 @@ class ElectronCompat {
     }
   }
 
-  async directoryChooser(_replace?: boolean): Promise<{ filePaths: string[]; canceled: boolean }> {
+  async directoryChooser(replace?: boolean): Promise<{ filePaths: string[]; canceled: boolean }> {
     if (configService.isTauriApp()) {
       const { open } = await import('@tauri-apps/plugin-dialog');
       const result = await open({
         directory: true,
         multiple: false,
       });
+
+      if (result) {
+        const newDir = result as string;
+        // Update the working directory in appConfig
+        if (window.appConfig) {
+          window.appConfig.set('GOOSE_WORKING_DIR', newDir);
+        }
+
+        // If replace is true, we should restart goosed with the new directory
+        if (replace) {
+          try {
+            const { invoke } = await import('@tauri-apps/api/core');
+            // Stop existing goosed
+            await invoke('stop_goosed');
+            // Start with new directory
+            await invoke('start_goosed', { workingDir: newDir });
+            console.log('Goosed restarted with new working directory:', newDir);
+
+            // Reload the window to pick up the new configuration
+            window.location.reload();
+          } catch (error) {
+            console.error('Failed to restart goosed with new directory:', error);
+          }
+        }
+      }
+
       return {
         filePaths: result ? [result as string] : [],
         canceled: !result,
@@ -413,6 +439,12 @@ class AppConfigCompat {
     if (key === 'recipeConfig') {
       const electronConfig = electronCompat.getConfig();
       return electronConfig?.recipeConfig;
+    }
+
+    // Special handling for GOOSE_WORKING_DIR to prevent 'undefined' display
+    if (key === 'GOOSE_WORKING_DIR') {
+      const value = this.configCache.get(key);
+      return value || '.';
     }
 
     // Return cached value or undefined

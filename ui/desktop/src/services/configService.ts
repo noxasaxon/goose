@@ -37,11 +37,23 @@ class ConfigService {
             workingDir: '.',
           });
           console.log('Goosed started on port:', goosedState.port);
+        } else {
+          console.log(
+            'Goosed already running on port:',
+            goosedState.port,
+            'in dir:',
+            goosedState.working_dir
+          );
         }
 
         // Now get the app config with the port
         const tauriConfig = await invoke<AppConfig>('get_app_config');
         console.log('Got app config:', tauriConfig);
+
+        // Store the working directory in appConfig for UI components
+        if (goosedState?.working_dir && window.appConfig) {
+          window.appConfig.set('GOOSE_WORKING_DIR', goosedState.working_dir);
+        }
 
         this.config = tauriConfig;
         return tauriConfig;
