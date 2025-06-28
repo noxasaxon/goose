@@ -6,8 +6,8 @@
   "build": {
     "frontendDist": "../desktop/dist",
     "devUrl": "http://localhost:5173",
-    "beforeDevCommand": "cd ../desktop && pnpm dev:vite",
-    "beforeBuildCommand": "cd ../desktop && pnpm build:vite"
+    "beforeDevCommand": "cd ../desktop && npm run dev:vite",
+    "beforeBuildCommand": "cd ../desktop && npm run build:vite"
   },
   "app": {
     "windows": [

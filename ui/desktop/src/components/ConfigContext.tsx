@@ -213,8 +213,9 @@ export const ConfigProvider: React.FC<ConfigProviderProps> = ({ children }) => {
         }
       } catch (error) {
         console.error('Failed to initialize configuration:', error);
-        // Re-throw to let error boundary handle it
-        throw error;
+        // Still set initialized to true so the app can render
+        // The app will handle the error state
+        setIsInitialized(true);
       }
     })();
   }, []);

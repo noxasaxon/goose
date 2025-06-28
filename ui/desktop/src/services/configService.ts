@@ -47,7 +47,13 @@ class ConfigService {
         return tauriConfig;
       } catch (error) {
         console.error('Failed to get Tauri config:', error);
-        throw error;
+        // Return fallback config instead of throwing
+        this.config = {
+          GOOSE_API_HOST: 'http://127.0.0.1',
+          GOOSE_PORT: 3000,
+          secretKey: 'dev-secret-key',
+        };
+        return this.config;
       }
     } else if (typeof window !== 'undefined' && window.appConfig) {
       // Running in Electron - use window.appConfig
@@ -75,10 +81,8 @@ class ConfigService {
 
   async getApiUrl(): Promise<string> {
     const config = await this.getConfig();
-    if (!config.GOOSE_PORT) {
-      throw new Error('Goose API port not configured');
-    }
-    return `${config.GOOSE_API_HOST}:${config.GOOSE_PORT}`;
+    const port = config.GOOSE_PORT || 3000; // Default to 3000 if not configured
+    return `${config.GOOSE_API_HOST}:${port}`;
   }
 
   async getSecretKey(): Promise<string> {
