@@ -343,12 +343,36 @@ await onOpenUrl((urls) => {
 - [ ] Working auto-updates
 - [ ] Proper system integration
 
+## Progress Log
+
+### 2025-06-28: Phase 1 & 2 Progress
+
+#### Completed Tasks:
+1. ✅ Created tauri-migration branch (using existing noxasaxon-tauri branch)
+2. ✅ Verified Rust 1.88.0 and cargo-tauri 2.4.1 installed
+3. ✅ Initialized Tauri project structure at `ui/tauri/`
+4. ✅ Configured tauri.conf.json with proper settings
+5. ✅ Set up Vite integration for React app
+6. ✅ Added all necessary Tauri plugins
+7. ✅ Configured goosed as Tauri sidecar:
+   - Created binaries directory
+   - Built prepare-sidecar.js script for platform-specific naming
+   - Successfully prepared goosed-aarch64-apple-darwin binary
+   - Updated tauri.conf.json with sidecar configuration
+   - Added shell:allow-execute permission for sidecar
+
+#### In Progress:
+- Implementing sidecar spawn commands and lifecycle management
+  - Created goosed.rs module with port finding and spawn logic
+  - Added reqwest, tokio, and dirs dependencies
+  - Registered Tauri commands for goosed management
+  - Next: Test sidecar spawning functionality
+
 ## Next Steps
 
-1. Get approval for migration plan
-2. Set up development environment
-3. Create migration branch
-4. Begin Phase 1 implementation
+1. Complete sidecar lifecycle implementation
+2. Test Tauri dev mode with goosed sidecar
+3. Begin migrating IPC functions (Phase 3)
 
 ## References
 
