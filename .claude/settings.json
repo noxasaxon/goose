@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git checkout:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(uv run:*)",
+      "Bash(grep:*)",
+      "Bash(pnpm run build:dev:*)",
+      "Bash(docker exec:*)",
+      "Bash(uv sync:*)",
+      "Bash(mkdir:*)",
+      "Bash(find:*)",
+      "Bash(git add:*)",
+      "Bash(uv add:*)",
+      "Bash(sed:*)",
+      "Bash(docker compose:*)",
+      "Bash(bash:*)",
+      "Bash(rg:*)",
+      "Bash(time uv run pytest:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(scripts/tests-start.sh)",
+      "Bash(cd backend && scripts/tests-start.sh)",
+      "Bash(python:*)",
+      "Bash(echo \"\" >>:*)",
+      "Bash(pytest:*)",
+      "Bash(ls:*)",
+      "Bash(echo:*)",
+      "Read(./*)",
+      "Write(./*)",
+      "Update(./*)"
+    ]
+  },
+  "enableAllProjectMcpServers": false
+}
