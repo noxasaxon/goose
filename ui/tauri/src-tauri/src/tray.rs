@@ -4,7 +4,7 @@ use tauri::{
     image::Image,
     menu::{MenuBuilder, MenuItemBuilder},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    AppHandle, Manager, Runtime,
+    AppHandle, Emitter, Manager, Runtime,
 };
 
 // Tray icon state
@@ -88,7 +88,7 @@ pub fn create_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
 }
 
 pub fn destroy_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
-    if let Some(tray) = app.tray_icon_by_id("main") {
+    if let Some(tray) = app.tray_by_id("main") {
         tray.set_visible(false)?;
     }
 
@@ -99,7 +99,7 @@ pub fn destroy_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
 }
 
 pub fn update_tray_menu<R: Runtime>(app: &AppHandle<R>, has_update: bool) -> tauri::Result<()> {
-    if let Some(tray) = app.tray_icon_by_id("main") {
+    if let Some(tray) = app.tray_by_id("main") {
         let menu_builder = MenuBuilder::new(app);
 
         // Add update item if update is available
@@ -180,7 +180,7 @@ pub async fn get_menu_bar_icon_state() -> Result<bool, String> {
 pub async fn set_dock_icon(app: AppHandle, show: bool) -> Result<bool, String> {
     #[cfg(target_os = "macos")]
     {
-        app.set_activation_policy(if show {
+        let _ = app.set_activation_policy(if show {
             tauri::ActivationPolicy::Regular
         } else {
             tauri::ActivationPolicy::Accessory

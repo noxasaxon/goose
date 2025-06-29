@@ -7,3 +7,4 @@ Iterate in small PR-sized steps. Quality is essential, please take your time to 
 ## 17 · Key Operational Guidelines
 
 - You must always run tests after every task, and before reporting completion of anything to the user. Unless you are spot checking a test, you can only run them via `scripts/tests-start.sh` in the backend directory
+- When working on a Tauri project, you need to run cargo tauri dev from the repo root to actually compile the whole project before commiting or reporting a task completed
