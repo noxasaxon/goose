@@ -1,6 +1,7 @@
 mod goosed;
 mod settings;
 mod tray;
+mod updater;
 mod window;
 
 use goosed::GoosedManager;
@@ -119,6 +120,11 @@ pub fn run() {
             settings::get_recent_dirs,
             settings::add_recent_dir,
             settings::clear_recent_dirs,
+            updater::check_for_update,
+            updater::download_update,
+            updater::install_update,
+            updater::get_update_state,
+            updater::get_app_version,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

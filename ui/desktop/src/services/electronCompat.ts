@@ -176,6 +176,16 @@ class ElectronCompat {
             }
           }
         }
+
+        // Get and cache app version
+        try {
+          const version = await invoke<string>('get_app_version');
+          if (window.appConfig) {
+            window.appConfig.set('APP_VERSION', version);
+          }
+        } catch (error) {
+          console.error('Failed to get app version:', error);
+        }
       } catch (error) {
         console.error('Failed to notify react ready:', error);
       }
@@ -551,16 +561,20 @@ class ElectronCompat {
 
   // Update related
   getVersion(): string {
-    return '1.0.0'; // Should get from package.json or Tauri config
+    if (configService.isTauriApp() && window.appConfig) {
+      const version = window.appConfig.get('APP_VERSION');
+      if (version) return version as string;
+    }
+    return '1.0.0';
   }
 
   async checkForUpdates(): Promise<{ updateInfo: unknown; error: string | null }> {
     if (configService.isTauriApp()) {
+      const { invoke } = await import('@tauri-apps/api/core');
       try {
-        const { check } = await import('@tauri-apps/plugin-updater');
-        const update = await check();
+        const updateInfo = await invoke('check_for_update');
         return {
-          updateInfo: update,
+          updateInfo,
           error: null,
         };
       } catch (error) {
@@ -574,11 +588,29 @@ class ElectronCompat {
   }
 
   async downloadUpdate(): Promise<{ success: boolean; error: string | null }> {
-    return { success: false, error: 'Not implemented' };
+    if (configService.isTauriApp()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      try {
+        const success = await invoke<boolean>('download_update');
+        return { success, error: null };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.toString() : String(error),
+        };
+      }
+    }
+    return { success: false, error: 'Not in Tauri' };
   }
 
   installUpdate(): void {
-    console.log('Install update called');
+    if (configService.isTauriApp()) {
+      import('@tauri-apps/api/core').then(({ invoke }) => {
+        invoke('install_update').catch((error) => {
+          console.error('Failed to install update:', error);
+        });
+      });
+    }
   }
 
   restartApp(): void {
@@ -589,11 +621,57 @@ class ElectronCompat {
     }
   }
 
-  onUpdaterEvent(_callback: (event: unknown) => void): void {
-    console.log('Updater event listener registered');
+  onUpdaterEvent(callback: (event: unknown) => void): void {
+    if (configService.isTauriApp()) {
+      import('@tauri-apps/api/event').then(({ listen }) => {
+        // Listen for various updater events
+        listen('updater://update-available', (event) => {
+          callback({ type: 'update-available', data: event.payload });
+        });
+        listen('updater://download-started', () => {
+          callback({ type: 'download-started' });
+        });
+        listen('updater://download-progress', (event) => {
+          callback({ type: 'download-progress', progress: event.payload });
+        });
+        listen('updater://download-complete', () => {
+          callback({ type: 'download-complete' });
+        });
+        listen('updater://download-error', (event) => {
+          callback({ type: 'download-error', error: event.payload });
+        });
+        listen('updater://install-started', () => {
+          callback({ type: 'install-started' });
+        });
+        listen('updater://install-error', (event) => {
+          callback({ type: 'install-error', error: event.payload });
+        });
+      });
+    }
   }
 
   async getUpdateState(): Promise<{ updateAvailable: boolean; latestVersion?: string } | null> {
+    if (configService.isTauriApp()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      try {
+        const state = await invoke<{
+          version: string;
+          available: boolean;
+          downloaded: boolean;
+          notes?: string;
+          pub_date?: string;
+        } | null>('get_update_state');
+
+        if (state) {
+          return {
+            updateAvailable: state.available,
+            latestVersion: state.version,
+          };
+        }
+      } catch (error) {
+        console.error('Failed to get update state:', error);
+      }
+    }
     return null;
   }
 }
