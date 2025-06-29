@@ -1,4 +1,5 @@
 mod goosed;
+mod settings;
 mod tray;
 mod window;
 
@@ -30,6 +31,7 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_updater::Builder::default().build())
+        .plugin(tauri_plugin_store::Builder::default().build())
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -39,13 +41,8 @@ pub fn run() {
                 )?;
             }
 
-            // Create tray icon if enabled in settings
-            // TODO: Load from actual settings file
-            let app_handle_tray = app.handle().clone();
-            std::thread::spawn(move || {
-                std::thread::sleep(std::time::Duration::from_millis(500));
-                let _ = tray::create_tray(&app_handle_tray);
-            });
+            // Initialize settings
+            settings::init_settings(&app.handle())?;
 
             // Start goosed in the background after window is created
             let app_handle = app.handle().clone();
@@ -115,6 +112,13 @@ pub fn run() {
             tray::get_menu_bar_icon_state,
             tray::set_dock_icon,
             tray::get_dock_icon_state,
+            settings::get_settings,
+            settings::update_settings,
+            settings::get_setting,
+            settings::set_setting,
+            settings::get_recent_dirs,
+            settings::add_recent_dir,
+            settings::clear_recent_dirs,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

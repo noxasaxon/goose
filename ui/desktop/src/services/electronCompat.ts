@@ -105,6 +105,9 @@ class ElectronCompat {
           window.appConfig.set('GOOSE_WORKING_DIR', newDir);
         }
 
+        // Add to recent directories
+        await this.addRecentDir(newDir);
+
         // If replace is true, we should restart goosed with the new directory
         if (replace) {
           try {
@@ -355,6 +358,32 @@ class ElectronCompat {
   }
 
   async getSettings(): Promise<unknown> {
+    if (configService.isTauriApp()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      try {
+        const settings = await invoke<{
+          showMenuBarIcon: boolean;
+          showDockIcon: boolean;
+          showQuitConfirmation: boolean;
+          schedulingEngine: string;
+          gooseServerMemory: boolean;
+          gooseServerComputerController: boolean;
+        }>('get_settings');
+        // Convert to match the expected format
+        return {
+          envToggles: {
+            GOOSE_SERVER__MEMORY: settings.gooseServerMemory,
+            GOOSE_SERVER__COMPUTER_CONTROLLER: settings.gooseServerComputerController,
+          },
+          showMenuBarIcon: settings.showMenuBarIcon,
+          showDockIcon: settings.showDockIcon,
+          schedulingEngine: settings.schedulingEngine,
+          showQuitConfirmation: settings.showQuitConfirmation,
+        };
+      } catch (error) {
+        console.error('Failed to get settings:', error);
+      }
+    }
     return {
       envToggles: {},
       showMenuBarIcon: true,
@@ -364,20 +393,123 @@ class ElectronCompat {
     };
   }
 
-  async setSchedulingEngine(_engine: string): Promise<boolean> {
+  async setSchedulingEngine(engine: string): Promise<boolean> {
+    if (configService.isTauriApp()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      try {
+        await invoke('set_setting', {
+          key: 'schedulingEngine',
+          value: engine,
+        });
+        return true;
+      } catch (error) {
+        console.error('Failed to set scheduling engine:', error);
+        return false;
+      }
+    }
     return true;
   }
 
-  async setQuitConfirmation(_show: boolean): Promise<boolean> {
+  async setQuitConfirmation(show: boolean): Promise<boolean> {
+    if (configService.isTauriApp()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      try {
+        await invoke('set_setting', {
+          key: 'showQuitConfirmation',
+          value: show,
+        });
+        return true;
+      } catch (error) {
+        console.error('Failed to set quit confirmation:', error);
+        return false;
+      }
+    }
     return true;
   }
 
   async getQuitConfirmationState(): Promise<boolean> {
+    if (configService.isTauriApp()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      try {
+        const value = await invoke('get_setting', { key: 'showQuitConfirmation' });
+        return value as boolean;
+      } catch (error) {
+        console.error('Failed to get quit confirmation state:', error);
+        return false;
+      }
+    }
     return false;
   }
 
   async openNotificationsSettings(): Promise<boolean> {
     return true;
+  }
+
+  // Environment toggles
+  async setEnvToggle(key: string, value: boolean): Promise<boolean> {
+    if (configService.isTauriApp()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      try {
+        await invoke('set_setting', { key, value });
+        return true;
+      } catch (error) {
+        console.error('Failed to set env toggle:', error);
+        return false;
+      }
+    }
+    return true;
+  }
+
+  async getEnvToggle(key: string): Promise<boolean> {
+    if (configService.isTauriApp()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      try {
+        const value = await invoke('get_setting', { key });
+        return value as boolean;
+      } catch (error) {
+        console.error('Failed to get env toggle:', error);
+        return false;
+      }
+    }
+    return false;
+  }
+
+  // Recent directories
+  async getRecentDirs(): Promise<string[]> {
+    if (configService.isTauriApp()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      try {
+        return await invoke('get_recent_dirs');
+      } catch (error) {
+        console.error('Failed to get recent dirs:', error);
+        return [];
+      }
+    }
+    return [];
+  }
+
+  async addRecentDir(directory: string): Promise<string[]> {
+    if (configService.isTauriApp()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      try {
+        return await invoke('add_recent_dir', { directory });
+      } catch (error) {
+        console.error('Failed to add recent dir:', error);
+        return [];
+      }
+    }
+    return [];
+  }
+
+  async clearRecentDirs(): Promise<void> {
+    if (configService.isTauriApp()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      try {
+        await invoke('clear_recent_dirs');
+      } catch (error) {
+        console.error('Failed to clear recent dirs:', error);
+      }
+    }
   }
 
   // Event handling - store callbacks to simulate Electron IPC
