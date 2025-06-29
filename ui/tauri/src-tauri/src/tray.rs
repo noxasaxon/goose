@@ -36,8 +36,8 @@ pub fn create_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
 
     // Get the icon based on platform
     let icon_bytes = if cfg!(target_os = "macos") {
-        // macOS uses template images
-        include_bytes!("../icons/iconTemplate.png").to_vec()
+        // macOS uses template images - use @2x for retina displays
+        include_bytes!("../icons/iconTemplate@2x.png").to_vec()
     } else {
         // Windows and Linux use regular icons
         include_bytes!("../icons/32x32.png").to_vec()
