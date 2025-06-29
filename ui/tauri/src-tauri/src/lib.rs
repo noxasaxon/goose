@@ -125,6 +125,7 @@ pub fn run() {
             updater::install_update,
             updater::get_update_state,
             updater::get_app_version,
+            updater::relaunch_app,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

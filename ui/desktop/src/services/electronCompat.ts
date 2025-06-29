@@ -605,10 +605,15 @@ class ElectronCompat {
 
   installUpdate(): void {
     if (configService.isTauriApp()) {
-      import('@tauri-apps/api/core').then(({ invoke }) => {
-        invoke('install_update').catch((error) => {
+      import('@tauri-apps/api/core').then(async ({ invoke }) => {
+        try {
+          // Install the update
+          await invoke('install_update');
+          // After successful installation, relaunch the app
+          await invoke('relaunch_app');
+        } catch (error) {
           console.error('Failed to install update:', error);
-        });
+        }
       });
     }
   }
