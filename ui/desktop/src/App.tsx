@@ -547,7 +547,6 @@ export default function App() {
         />
       )}
       <div className="relative w-screen h-screen overflow-hidden bg-bgApp flex flex-col">
-        <div className="titlebar-drag-region" data-tauri-drag-region />
         <div>
           {view === 'loading' && <SuspenseLoader />}
           {view === 'welcome' && (

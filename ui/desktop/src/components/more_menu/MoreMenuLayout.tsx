@@ -24,7 +24,6 @@ export default function MoreMenuLayout({
     <div
       className="relative flex items-center h-14 border-b border-borderSubtle w-full"
       style={{ WebkitAppRegion: 'drag' }}
-      data-tauri-drag-region
     >
       {showMenu && (
         <div
