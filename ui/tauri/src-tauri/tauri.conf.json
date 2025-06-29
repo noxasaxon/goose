@@ -2,12 +2,12 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Goose",
   "version": "1.0.30",
-  "identifier": "com.goose.app",
+  "identifier": "com.block.goose",
   "build": {
-    "frontendDist": "../desktop/dist",
+    "frontendDist": "../../desktop/dist",
     "devUrl": "http://localhost:5173",
-    "beforeDevCommand": "cd ../desktop && npm run dev:vite",
-    "beforeBuildCommand": "cd ../desktop && npm run build:vite"
+    "beforeDevCommand": "",
+    "beforeBuildCommand": ""
   },
   "app": {
     "windows": [
