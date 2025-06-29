@@ -16,7 +16,7 @@ pub fn run() {
                 if let Some(url) = args.iter().find(|arg| arg.starts_with("goose://")) {
                     window::add_pending_deep_link(url.clone());
                 }
-                
+
                 // Focus existing windows or create new one
                 let _ = window::focus_or_create_window(&app_handle).await;
             });
@@ -54,11 +54,11 @@ pub fn run() {
                 runtime.block_on(async {
                     // Small delay to ensure window is ready
                     tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
-                    
+
                     match goosed::start_goosed_internal(&app_handle, None).await {
                         Ok(state) => {
                             println!("Goosed started successfully on port {}", state.port);
-                            
+
                             // Get window and show it
                             if let Some(window) = app_handle.get_webview_window("main") {
                                 // Apply platform-specific styling to match dynamic windows
@@ -67,7 +67,7 @@ pub fn run() {
                                     use tauri::TitleBarStyle;
                                     let _ = window.set_title_bar_style(TitleBarStyle::Transparent);
                                 }
-                                
+
                                 // Inject window config
                                 let _ = window.eval(&format!(
                                     r#"
@@ -76,8 +76,7 @@ pub fn run() {
                                         GOOSE_WORKING_DIR: "{}"
                                     }};
                                     "#,
-                                    state.port,
-                                    state.working_dir
+                                    state.port, state.working_dir
                                 ));
                                 window.show().unwrap();
                             }

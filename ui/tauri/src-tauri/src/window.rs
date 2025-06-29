@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Mutex;
-use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder, Emitter};
+use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 
 // Track window IDs and their associated goosed ports
 lazy_static::lazy_static! {
@@ -57,13 +57,13 @@ pub async fn create_chat_window(
     let window_id;
     let window_label;
     let is_recipe_editor = options.view_type.as_deref() == Some("recipeEditor");
-    
+
     // Get window ID and check recipe editor status with the lock
     let (goosed_port, working_dir) = {
         let mut state = WINDOW_STATE.lock().unwrap();
         window_id = state.next_window_id();
         window_label = format!("chat-{}", window_id);
-        
+
         if is_recipe_editor {
             // Find the first non-recipe-editor window's goosed info
             let parent_info = state
@@ -78,13 +78,13 @@ pub async fn create_chat_window(
             (None, None)
         }
     }; // Lock is released here
-    
+
     // Start goosed if needed (outside of lock)
     let (final_goosed_port, final_working_dir) = if !is_recipe_editor {
         // Check if goosed is already running
         let existing_state = crate::goosed::get_goosed_state(app.clone())
             .map_err(|e| format!("Failed to check goosed state: {}", e))?;
-        
+
         if let Some(state) = existing_state {
             // Goosed is already running, reuse it
             (Some(state.port as u32), Some(state.working_dir))
@@ -93,7 +93,10 @@ pub async fn create_chat_window(
             let goosed_state = crate::goosed::start_goosed_internal(&app, options.dir.clone())
                 .await
                 .map_err(|e| format!("Failed to start goosed: {}", e))?;
-            (Some(goosed_state.port as u32), Some(goosed_state.working_dir))
+            (
+                Some(goosed_state.port as u32),
+                Some(goosed_state.working_dir),
+            )
         }
     } else {
         (goosed_port, working_dir)
@@ -105,7 +108,10 @@ pub async fn create_chat_window(
         query_params.push(format!("initialQuery={}", urlencoding::encode(query)));
     }
     if let Some(session_id) = &options.resume_session_id {
-        query_params.push(format!("resumeSessionId={}", urlencoding::encode(session_id)));
+        query_params.push(format!(
+            "resumeSessionId={}",
+            urlencoding::encode(session_id)
+        ));
     }
     if let Some(view_type) = &options.view_type {
         query_params.push(format!("view={}", urlencoding::encode(view_type)));
@@ -189,7 +195,7 @@ pub async fn create_chat_window(
     window.on_window_event(move |event| {
         if let tauri::WindowEvent::CloseRequested { .. } = event {
             let mut state = WINDOW_STATE.lock().unwrap();
-            
+
             // Get window info before removing
             if let Some(info) = state.window_map.get(&window_label_clone) {
                 // If this is not a recipe editor and has a goosed process, we should stop it
@@ -198,7 +204,9 @@ pub async fn create_chat_window(
                     let other_windows_using_port = state
                         .window_map
                         .values()
-                        .filter(|w| w.label != window_label_clone && w.goosed_port == info.goosed_port)
+                        .filter(|w| {
+                            w.label != window_label_clone && w.goosed_port == info.goosed_port
+                        })
                         .count();
 
                     if other_windows_using_port == 0 {
@@ -208,7 +216,7 @@ pub async fn create_chat_window(
                     }
                 }
             }
-            
+
             state.window_map.remove(&window_label_clone);
         }
     });
@@ -282,7 +290,7 @@ pub fn add_pending_deep_link(url: String) {
 // Helper function to focus window or create new one
 pub async fn focus_or_create_window(app: &AppHandle) -> Result<(), String> {
     let windows = app.webview_windows();
-    
+
     if windows.is_empty() {
         // Create new window
         create_chat_window(
@@ -301,6 +309,6 @@ pub async fn focus_or_create_window(app: &AppHandle) -> Result<(), String> {
         // Focus existing windows
         show_window(app.clone(), None)?;
     }
-    
+
     Ok(())
 }

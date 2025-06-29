@@ -44,7 +44,10 @@ pub fn create_tray<R: Runtime>(app: &AppHandle<R>) -> Result<()> {
     };
 
     // Load the icon from the resources
-    let icon = Image::from_path(app.path().resolve(icon_path, tauri::path::BaseDirectory::Resource)?)?;
+    let icon = Image::from_path(
+        app.path()
+            .resolve(icon_path, tauri::path::BaseDirectory::Resource)?,
+    )?;
 
     // Create the tray menu
     let show_window = MenuItemBuilder::with_id("show_window", "Show Window").build(app)?;
@@ -58,16 +61,14 @@ pub fn create_tray<R: Runtime>(app: &AppHandle<R>) -> Result<()> {
         .icon(icon)
         .menu(&menu)
         .tooltip("Goose")
-        .on_menu_event(move |app, event| {
-            match event.id.as_ref() {
-                "show_window" => {
-                    show_all_windows(app);
-                }
-                "quit" => {
-                    app.exit(0);
-                }
-                _ => {}
+        .on_menu_event(move |app, event| match event.id.as_ref() {
+            "show_window" => {
+                show_all_windows(app);
             }
+            "quit" => {
+                app.exit(0);
+            }
+            _ => {}
         })
         .on_tray_icon_event(|app, event| {
             if let TrayIconEvent::Click {
@@ -79,7 +80,7 @@ pub fn create_tray<R: Runtime>(app: &AppHandle<R>) -> Result<()> {
                 // On Windows, left click shows the window
                 #[cfg(target_os = "windows")]
                 show_all_windows(app);
-                
+
                 // On macOS, left click shows the menu (this is the default behavior)
             }
         })
@@ -93,45 +94,43 @@ pub fn destroy_tray<R: Runtime>(app: &AppHandle<R>) -> Result<()> {
     if let Some(tray) = app.tray_by_id("main") {
         tray.set_visible(false)?;
     }
-    
+
     let mut created = TRAY_ICON_CREATED.lock().unwrap();
     *created = false;
-    
+
     Ok(())
 }
 
 pub fn update_tray_menu<R: Runtime>(app: &AppHandle<R>, has_update: bool) -> Result<()> {
     if let Some(tray) = app.tray_by_id("main") {
         let menu_builder = MenuBuilder::new(app);
-        
+
         // Add update item if update is available
         let menu = if has_update {
-            let update_item = MenuItemBuilder::with_id("update_available", "Update Available...")
-                .build(app)?;
+            let update_item =
+                MenuItemBuilder::with_id("update_available", "Update Available...").build(app)?;
             let show_window = MenuItemBuilder::with_id("show_window", "Show Window").build(app)?;
             let quit = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
-            
+
             menu_builder
                 .items(&[&update_item, &show_window, &quit])
                 .build()?
         } else {
             let show_window = MenuItemBuilder::with_id("show_window", "Show Window").build(app)?;
             let quit = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
-            
-            menu_builder
-                .items(&[&show_window, &quit])
-                .build()?
+
+            menu_builder.items(&[&show_window, &quit]).build()?
         };
-        
+
         tray.set_menu(Some(menu))?;
     }
-    
+
     Ok(())
 }
 
 fn show_all_windows<R: Runtime>(app: &AppHandle<R>) {
     let windows = app.webview_windows();
-    
+
     if windows.is_empty() {
         // Create a new window
         let _ = crate::window::create_chat_window(
@@ -140,22 +139,22 @@ fn show_all_windows<R: Runtime>(app: &AppHandle<R>) {
         );
         return;
     }
-    
+
     // Show all windows with offset
     let initial_offset_x = 30;
     let initial_offset_y = 30;
-    
+
     for (index, (_label, window)) in windows.iter().enumerate() {
         if let Ok(position) = window.outer_position() {
             let new_x = position.x + (initial_offset_x * index as i32);
             let new_y = position.y + (initial_offset_y * index as i32);
-            
+
             let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
                 x: new_x,
                 y: new_y,
             }));
         }
-        
+
         let _ = window.show();
         let _ = window.set_focus();
     }
@@ -169,10 +168,10 @@ pub async fn set_menu_bar_icon(app: AppHandle, show: bool) -> Result<bool, Strin
     } else {
         destroy_tray(&app).map_err(|e| e.to_string())?;
     }
-    
+
     // Save the setting
     // In a real implementation, you would persist this to a settings file
-    
+
     Ok(true)
 }
 
@@ -193,7 +192,7 @@ pub async fn set_dock_icon(app: AppHandle, show: bool) -> Result<bool, String> {
             tauri::ActivationPolicy::Accessory
         });
     }
-    
+
     Ok(true)
 }
 
@@ -202,7 +201,7 @@ pub async fn get_dock_icon_state() -> Result<bool, String> {
     // On non-macOS platforms, always return true
     #[cfg(not(target_os = "macos"))]
     return Ok(true);
-    
+
     // On macOS, check the current activation policy
     #[cfg(target_os = "macos")]
     {

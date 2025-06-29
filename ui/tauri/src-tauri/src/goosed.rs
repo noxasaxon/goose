@@ -109,7 +109,9 @@ pub async fn start_goosed_internal<R: Runtime>(
     }
 
     // Get the secret key from the manager
-    let secret_key = manager.secret_key.lock()
+    let secret_key = manager
+        .secret_key
+        .lock()
         .map_err(|_| "Failed to access secret key".to_string())?
         .clone();
 
@@ -197,22 +199,25 @@ pub async fn stop_goosed<R: Runtime>(app: AppHandle<R>) -> Result<(), String> {
 
     // Kill the process
     let kill_result = {
-        let mut process_guard = manager.process.lock()
+        let mut process_guard = manager
+            .process
+            .lock()
             .map_err(|_| "Failed to access goosed process".to_string())?;
-        
+
         if let Some(child) = process_guard.take() {
-            child.kill()
+            child
+                .kill()
                 .map_err(|e| format!("Failed to kill goosed process: {}", e))
         } else {
             Ok(()) // No process running
         }
     }; // Drop the mutex guard here
-    
+
     // If kill was successful, wait a bit for the process to terminate
     if kill_result.is_ok() {
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
     }
-    
+
     kill_result
 }
 
@@ -220,19 +225,21 @@ pub async fn stop_goosed<R: Runtime>(app: AppHandle<R>) -> Result<(), String> {
 #[tauri::command]
 pub fn get_app_config<R: Runtime>(app: AppHandle<R>) -> Result<AppConfig, String> {
     let manager = app.state::<GoosedManager>();
-    
+
     // Get the secret key
-    let secret_key = manager.secret_key.lock()
+    let secret_key = manager
+        .secret_key
+        .lock()
         .map_err(|_| "Failed to access secret key".to_string())?
         .clone();
-    
+
     // Get the port from goosed state if available
     let goose_port = if let Ok(state) = manager.state.lock() {
         state.as_ref().map(|s| s.port)
     } else {
         None
     };
-    
+
     Ok(AppConfig {
         goose_api_host: "http://127.0.0.1".to_string(),
         goose_port,
