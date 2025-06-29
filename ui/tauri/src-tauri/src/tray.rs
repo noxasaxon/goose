@@ -2,9 +2,9 @@ use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use tauri::{
     image::Image,
-    menu::{Menu, MenuBuilder, MenuItemBuilder},
+    menu::{MenuBuilder, MenuItemBuilder},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    AppHandle, Manager, Result, Runtime,
+    AppHandle, Manager, Runtime,
 };
 
 // Tray icon state
@@ -27,7 +27,7 @@ impl Default for AppSettings {
     }
 }
 
-pub fn create_tray<R: Runtime>(app: &AppHandle<R>) -> Result<()> {
+pub fn create_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
     // Check if tray is already created
     let mut created = TRAY_ICON_CREATED.lock().unwrap();
     if *created {
@@ -35,19 +35,16 @@ pub fn create_tray<R: Runtime>(app: &AppHandle<R>) -> Result<()> {
     }
 
     // Get the icon based on platform
-    let icon_path = if cfg!(target_os = "macos") {
+    let icon_bytes = if cfg!(target_os = "macos") {
         // macOS uses template images
-        "icons/iconTemplate.png"
+        include_bytes!("../icons/iconTemplate.png").to_vec()
     } else {
         // Windows and Linux use regular icons
-        "icons/32x32.png"
+        include_bytes!("../icons/32x32.png").to_vec()
     };
 
-    // Load the icon from the resources
-    let icon = Image::from_path(
-        app.path()
-            .resolve(icon_path, tauri::path::BaseDirectory::Resource)?,
-    )?;
+    // Create the icon
+    let icon = Image::from_bytes(&icon_bytes)?;
 
     // Create the tray menu
     let show_window = MenuItemBuilder::with_id("show_window", "Show Window").build(app)?;
@@ -90,8 +87,8 @@ pub fn create_tray<R: Runtime>(app: &AppHandle<R>) -> Result<()> {
     Ok(())
 }
 
-pub fn destroy_tray<R: Runtime>(app: &AppHandle<R>) -> Result<()> {
-    if let Some(tray) = app.tray_by_id("main") {
+pub fn destroy_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
+    if let Some(tray) = app.tray_icon_by_id("main") {
         tray.set_visible(false)?;
     }
 
@@ -101,8 +98,8 @@ pub fn destroy_tray<R: Runtime>(app: &AppHandle<R>) -> Result<()> {
     Ok(())
 }
 
-pub fn update_tray_menu<R: Runtime>(app: &AppHandle<R>, has_update: bool) -> Result<()> {
-    if let Some(tray) = app.tray_by_id("main") {
+pub fn update_tray_menu<R: Runtime>(app: &AppHandle<R>, has_update: bool) -> tauri::Result<()> {
+    if let Some(tray) = app.tray_icon_by_id("main") {
         let menu_builder = MenuBuilder::new(app);
 
         // Add update item if update is available
@@ -132,11 +129,8 @@ fn show_all_windows<R: Runtime>(app: &AppHandle<R>) {
     let windows = app.webview_windows();
 
     if windows.is_empty() {
-        // Create a new window
-        let _ = crate::window::create_chat_window(
-            app.clone(),
-            crate::window::CreateWindowOptions::default(),
-        );
+        // Create a new window using a simpler approach
+        let _ = app.emit("create-chat-window", ());
         return;
     }
 

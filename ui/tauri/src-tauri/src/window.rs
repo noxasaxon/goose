@@ -39,7 +39,7 @@ impl WindowState {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct CreateWindowOptions {
     query: Option<String>,
     dir: Option<String>,
