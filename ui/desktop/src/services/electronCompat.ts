@@ -39,28 +39,43 @@ class ElectronCompat {
   }
 
   // Stub for other electron methods that might be called
-  hideWindow(): void {
-    // In Tauri, we'd use window management APIs
-    console.log('hideWindow called - not implemented in Tauri yet');
+  async hideWindow(): Promise<void> {
+    if (configService.isTauriApp()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      const { getCurrentWindow } = await import('@tauri-apps/api/window');
+      try {
+        await invoke('hide_window', { window: getCurrentWindow() });
+      } catch (error) {
+        console.error('Failed to hide window:', error);
+      }
+    }
   }
 
-  createChatWindow(
+  async createChatWindow(
     query?: string,
     dir?: string,
     version?: string,
     resumeSessionId?: string,
     recipeConfig?: unknown,
     viewType?: string
-  ): void {
-    // In Tauri, we'd create a new window
-    console.log('createChatWindow called - not implemented in Tauri yet', {
-      query,
-      dir,
-      version,
-      resumeSessionId,
-      recipeConfig,
-      viewType,
-    });
+  ): Promise<void> {
+    if (configService.isTauriApp()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      try {
+        await invoke('create_chat_window', {
+          options: {
+            query,
+            dir,
+            version,
+            resume_session_id: resumeSessionId,
+            recipe_config: recipeConfig,
+            view_type: viewType,
+          },
+        });
+      } catch (error) {
+        console.error('Failed to create chat window:', error);
+      }
+    }
   }
 
   showNotification(data: { title: string; body: string }): void {
@@ -139,8 +154,29 @@ class ElectronCompat {
 
   platform: string = 'darwin'; // Default to macOS, should detect actual platform
 
-  reactReady(): void {
+  async reactReady(): Promise<void> {
     console.log('React ready');
+    if (configService.isTauriApp()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      try {
+        // Notify Tauri that React is ready (handles pending deep links)
+        await invoke('react_ready');
+
+        // Get window config from Tauri window
+        if (window.__tauriWindowConfig) {
+          // Update appConfig with window-specific values
+          if (window.appConfig) {
+            window.appConfig.set('GOOSE_PORT', window.__tauriWindowConfig.GOOSE_PORT);
+            window.appConfig.set('GOOSE_WORKING_DIR', window.__tauriWindowConfig.GOOSE_WORKING_DIR);
+            if (window.__tauriWindowConfig.recipeConfig) {
+              window.appConfig.set('recipeConfig', window.__tauriWindowConfig.recipeConfig);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to notify react ready:', error);
+      }
+    }
   }
 
   openInChrome(url: string): void {
@@ -508,6 +544,11 @@ declare global {
     electron: ElectronCompat;
     appConfig: AppConfigCompat;
     __TAURI_INTERNALS__?: unknown;
+    __tauriWindowConfig?: {
+      GOOSE_PORT: number;
+      GOOSE_WORKING_DIR: string;
+      recipeConfig?: unknown;
+    };
   }
 }
 
