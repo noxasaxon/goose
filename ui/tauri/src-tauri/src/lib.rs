@@ -1,4 +1,5 @@
 mod goosed;
+mod tray;
 mod window;
 
 use goosed::GoosedManager;
@@ -37,6 +38,14 @@ pub fn run() {
                         .build(),
                 )?;
             }
+
+            // Create tray icon if enabled in settings
+            // TODO: Load from actual settings file
+            let app_handle_tray = app.handle().clone();
+            std::thread::spawn(move || {
+                std::thread::sleep(std::time::Duration::from_millis(500));
+                let _ = tray::create_tray(&app_handle_tray);
+            });
 
             // Start goosed in the background after window is created
             let app_handle = app.handle().clone();
@@ -103,6 +112,10 @@ pub fn run() {
             window::show_window,
             window::react_ready,
             window::get_all_windows,
+            tray::set_menu_bar_icon,
+            tray::get_menu_bar_icon_state,
+            tray::set_dock_icon,
+            tray::get_dock_icon_state,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

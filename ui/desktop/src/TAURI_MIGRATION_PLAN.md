@@ -269,8 +269,8 @@ await onOpenUrl((urls) => {
 - [x] Implement deep linking (goose://)
 - [x] Migrate power save blocker (stubbed)
 - [x] Migrate notifications
-- [ ] Migrate system tray (in progress)
-- [ ] Migrate dock icon (macOS) (in progress)
+- [x] Migrate system tray
+- [x] Migrate dock icon (macOS)
 
 #### Settings & Config
 - [ ] Migrate settings management
@@ -360,12 +360,30 @@ await onOpenUrl((urls) => {
 - ✅ Deep linking setup
 
 ### What Needs Work
-- ❌ Window management (createChatWindow)
-- ❌ System tray and dock icons
 - ❌ Auto-updater configuration
+- ❌ Settings persistence
 - ❌ Full testing of all features
 
 ## Progress Log
+
+### 2025-06-29: System Tray and Dock Icon Support Complete
+
+#### Completed Tasks:
+1. ✅ Created comprehensive tray.rs module with:
+   - System tray creation and management
+   - Platform-specific icon handling (iconTemplate.png for macOS)
+   - Tray menu with "Show Window" and "Quit" options
+   - Update notification support in tray menu
+   - Left-click behavior for Windows
+2. ✅ Implemented dock icon visibility control:
+   - macOS-specific activation policy switching
+   - Hide/show dock icon based on settings
+3. ✅ Updated electronCompat.ts:
+   - Connected setMenuBarIcon/getMenuBarIconState to Tauri commands
+   - Connected setDockIcon/getDockIconState to Tauri commands
+4. ✅ Copied tray icon assets from Electron project
+5. ✅ Registered all tray/dock commands in lib.rs
+6. ✅ Auto-create tray on app startup
 
 ### 2025-06-29: Window Management Migration Complete
 

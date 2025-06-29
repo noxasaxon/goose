@@ -302,19 +302,55 @@ class ElectronCompat {
   }
 
   // Settings related methods
-  async setMenuBarIcon(_show: boolean): Promise<boolean> {
+  async setMenuBarIcon(show: boolean): Promise<boolean> {
+    if (configService.isTauriApp()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      try {
+        return await invoke('set_menu_bar_icon', { show });
+      } catch (error) {
+        console.error('Failed to set menu bar icon:', error);
+        return false;
+      }
+    }
     return true;
   }
 
   async getMenuBarIconState(): Promise<boolean> {
+    if (configService.isTauriApp()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      try {
+        return await invoke('get_menu_bar_icon_state');
+      } catch (error) {
+        console.error('Failed to get menu bar icon state:', error);
+        return true;
+      }
+    }
     return true;
   }
 
-  async setDockIcon(_show: boolean): Promise<boolean> {
+  async setDockIcon(show: boolean): Promise<boolean> {
+    if (configService.isTauriApp()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      try {
+        return await invoke('set_dock_icon', { show });
+      } catch (error) {
+        console.error('Failed to set dock icon:', error);
+        return false;
+      }
+    }
     return true;
   }
 
   async getDockIconState(): Promise<boolean> {
+    if (configService.isTauriApp()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      try {
+        return await invoke('get_dock_icon_state');
+      } catch (error) {
+        console.error('Failed to get dock icon state:', error);
+        return true;
+      }
+    }
     return true;
   }
 

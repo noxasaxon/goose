@@ -3,7 +3,8 @@
   "identifier": "default",
   "description": "Goose desktop application permissions",
   "windows": [
-    "main"
+    "main",
+    "chat-*"
   ],
   "permissions": [
     "core:default",
