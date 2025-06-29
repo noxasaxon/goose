@@ -4,10 +4,8 @@
   "private": true,
   "scripts": {
     "prepare-sidecar": "node scripts/prepare-sidecar.js",
-    "dev": "./dev.sh",
-    "build": "./build.sh",
-    "dev:old": "npm run prepare-sidecar && cargo tauri dev",
-    "build:old": "npm run prepare-sidecar && cargo tauri build",
+    "dev": "npm run prepare-sidecar && cargo tauri dev",
+    "build": "npm run prepare-sidecar && cargo tauri build",
     "tauri": "cargo tauri"
   }
 }

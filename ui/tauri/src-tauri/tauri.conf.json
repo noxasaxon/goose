@@ -6,7 +6,7 @@
   "build": {
     "frontendDist": "../../desktop/dist",
     "devUrl": "http://localhost:5173",
-    "beforeDevCommand": "cd $PWD/../../desktop && npm run dev:vite",
+    "beforeDevCommand": "",
     "beforeBuildCommand": ""
   },
   "app": {
