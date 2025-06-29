@@ -36,8 +36,8 @@ pub fn create_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
 
     // Get the icon based on platform
     let icon_bytes = if cfg!(target_os = "macos") {
-        // macOS uses template images - use @2x for retina displays
-        include_bytes!("../icons/iconTemplate@2x.png").to_vec()
+        // Use regular icon instead of template for always-white appearance
+        include_bytes!("../icons/32x32.png").to_vec()
     } else {
         // Windows and Linux use regular icons
         include_bytes!("../icons/32x32.png").to_vec()
@@ -67,7 +67,7 @@ pub fn create_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
             }
             _ => {}
         })
-        .on_tray_icon_event(|app, event| {
+        .on_tray_icon_event(|_app, event| {
             if let TrayIconEvent::Click {
                 button: MouseButton::Left,
                 button_state: MouseButtonState::Up,
