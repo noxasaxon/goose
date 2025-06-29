@@ -36,8 +36,8 @@ pub fn create_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
 
     // Get the icon based on platform
     let icon_bytes = if cfg!(target_os = "macos") {
-        // Use the update template icon which has white appearance
-        include_bytes!("../icons/iconTemplateUpdate@2x.png").to_vec()
+        // Use white icon for macOS dark menu bar
+        include_bytes!("../icons/iconTrayWhite@2x.png").to_vec()
     } else {
         // Windows and Linux use regular icons
         include_bytes!("../icons/32x32.png").to_vec()
@@ -103,14 +103,16 @@ pub fn update_tray_menu<R: Runtime>(app: &AppHandle<R>, has_update: bool) -> tau
         // Update the icon based on update availability
         let icon_bytes = if has_update {
             if cfg!(target_os = "macos") {
-                include_bytes!("../icons/iconTemplateUpdate@2x.png").to_vec()
+                // Use white update icon for macOS
+                include_bytes!("../icons/iconTrayUpdateWhite@2x.png").to_vec()
             } else {
-                // For Windows/Linux, use the regular icon (they don't have template support)
+                // For Windows/Linux, use the regular icon
                 include_bytes!("../icons/32x32.png").to_vec()
             }
         } else {
             if cfg!(target_os = "macos") {
-                include_bytes!("../icons/iconTemplate@2x.png").to_vec()
+                // Use white icon for macOS
+                include_bytes!("../icons/iconTrayWhite@2x.png").to_vec()
             } else {
                 include_bytes!("../icons/32x32.png").to_vec()
             }

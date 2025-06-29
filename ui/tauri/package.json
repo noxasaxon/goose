@@ -7,5 +7,8 @@
     "dev": "npm run prepare-sidecar && cargo tauri dev",
     "build": "npm run prepare-sidecar && cargo tauri build",
     "tauri": "cargo tauri"
+  },
+  "dependencies": {
+    "pngjs": "^7.0.0"
   }
 }

@@ -4,7 +4,7 @@
   "version": "1.0.30",
   "identifier": "com.goose.app",
   "build": {
-    "frontendDist": "../desktop/dist",
+    "frontendDist": "../../desktop/dist",
     "devUrl": "http://localhost:5173",
     "beforeDevCommand": "cd ../desktop && npm run dev:vite",
     "beforeBuildCommand": "cd ../desktop && npm run build:vite"
