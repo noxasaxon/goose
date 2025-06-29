@@ -16,11 +16,14 @@ export const BottomMenuModeSelection = ({ setView }: BottomMenuModeSelectionProp
 
   const fetchCurrentMode = useCallback(async () => {
     try {
-      const mode = (await read('GOOSE_MODE', false)) as string;
+      console.log('Fetching current mode');
+      const mode = (await read('GOOSE_MODE', false)) as string | null;
       if (mode) {
         setGooseMode(mode);
       }
+      // If mode is null, keep the default 'auto'
     } catch (error) {
+      // Only log unexpected errors, not missing keys
       console.error('Error fetching current mode:', error);
     }
   }, [read]);

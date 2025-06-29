@@ -150,8 +150,6 @@ export default function App() {
     }
     initAttemptedRef.current = true;
 
-    console.log(`Initializing app with settings v2`);
-
     const urlParams = new URLSearchParams(window.location.search);
     const viewType = urlParams.get('view');
     // Note: recipeConfig comes from window.electron.getConfig() for recipe editor deeplinks

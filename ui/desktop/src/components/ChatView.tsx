@@ -155,15 +155,26 @@ function ChatContent({
         // Try backend config first
         const response = await configService.getConfig();
         if (response.GOOSE_PORT) {
-          // We have valid backend config, now check for working directory
-          try {
-            const { readConfig } = await import('../api');
-            const dir = await readConfig({ body: { key: 'GOOSE_WORKING_DIR', is_secret: false } });
-            if (dir.data) {
-              setWorkingDir(dir.data as string);
+          // In Tauri mode, working directory is already set from goosed state
+          // Only try to load from backend API in Electron mode
+          if (!configService.isTauriApp()) {
+            try {
+              const { readConfig } = await import('../api');
+              const dir = await readConfig({
+                body: { key: 'GOOSE_WORKING_DIR', is_secret: false },
+              });
+              if (dir.data) {
+                setWorkingDir(dir.data as string);
+              }
+            } catch (error) {
+              console.log('Could not load working directory from config');
             }
-          } catch (error) {
-            console.log('Could not load working directory from config');
+          } else {
+            // In Tauri mode, get working directory from appConfig (set by configService)
+            const workingDirFromConfig = window.appConfig?.get('GOOSE_WORKING_DIR');
+            if (workingDirFromConfig && typeof workingDirFromConfig === 'string') {
+              setWorkingDir(workingDirFromConfig);
+            }
           }
         }
       } catch (error) {

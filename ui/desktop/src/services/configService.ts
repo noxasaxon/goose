@@ -9,14 +9,41 @@ interface AppConfig {
 class ConfigService {
   private config: AppConfig | null = null;
   private isTauri: boolean = false;
+  private initialConfigLoaded: boolean = false;
 
   constructor() {
     // Check if we're running in Tauri
     this.isTauri = typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined;
+    // Try to load initial config synchronously if available
+    this.loadInitialConfig();
+  }
+
+  private loadInitialConfig(): void {
+    // Check if config was injected by Tauri or Electron
+    if (window.appConfig) {
+      try {
+        // Try to get all config synchronously
+        const allConfig = window.appConfig.getAll();
+        const config = allConfig as unknown as AppConfig;
+        if (config && config.GOOSE_PORT) {
+          this.config = config;
+          this.initialConfigLoaded = true;
+          console.log('Loaded initial config from window.appConfig:', config);
+        }
+      } catch (error) {
+        console.warn('Failed to load initial config from window.appConfig:', error);
+      }
+    }
   }
 
   async getConfig(): Promise<AppConfig> {
-    if (this.config) {
+    // If we have initial config from window injection, use it
+    if (this.initialConfigLoaded && this.config) {
+      return this.config;
+    }
+
+    // In Electron mode, we can use cached config
+    if (!this.isTauri && this.config) {
       return this.config;
     }
 
@@ -32,23 +59,13 @@ class ConfigService {
 
         // If not running, start it
         if (!goosedState) {
-          console.log('Starting goosed...');
           goosedState = await invoke<{ port: number; working_dir: string }>('start_goosed', {
             workingDir: '.',
           });
-          console.log('Goosed started on port:', goosedState.port);
-        } else {
-          console.log(
-            'Goosed already running on port:',
-            goosedState.port,
-            'in dir:',
-            goosedState.working_dir
-          );
         }
 
         // Now get the app config with the port
         const tauriConfig = await invoke<AppConfig>('get_app_config');
-        console.log('Got app config:', tauriConfig);
 
         // Store the working directory in appConfig for UI components
         if (goosedState?.working_dir && window.appConfig) {
@@ -92,18 +109,50 @@ class ConfigService {
   }
 
   async getApiUrl(): Promise<string> {
+    // If we have initial config, return immediately
+    if (this.initialConfigLoaded && this.config) {
+      const port = this.config.GOOSE_PORT || 3000;
+      return Promise.resolve(`${this.config.GOOSE_API_HOST}:${port}`);
+    }
+
     const config = await this.getConfig();
     const port = config.GOOSE_PORT || 3000; // Default to 3000 if not configured
     return `${config.GOOSE_API_HOST}:${port}`;
   }
 
+  // Synchronous version for immediate access
+  getApiUrlSync(): string | null {
+    if (this.config && this.config.GOOSE_PORT) {
+      const port = this.config.GOOSE_PORT || 3000;
+      return `${this.config.GOOSE_API_HOST}:${port}`;
+    }
+    return null;
+  }
+
   async getSecretKey(): Promise<string> {
+    // If we have initial config, return immediately
+    if (this.initialConfigLoaded && this.config) {
+      return Promise.resolve(this.config.secretKey);
+    }
+
     const config = await this.getConfig();
     return config.secretKey;
   }
 
+  // Synchronous version for immediate access
+  getSecretKeySync(): string | null {
+    if (this.config && this.config.secretKey) {
+      return this.config.secretKey;
+    }
+    return null;
+  }
+
   isTauriApp(): boolean {
     return this.isTauri;
+  }
+
+  clearCache(): void {
+    this.config = null;
   }
 }
 

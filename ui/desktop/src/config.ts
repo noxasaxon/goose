@@ -36,13 +36,47 @@ export const getSecretKeySync = (): string => {
 // Initialize the cache on module load
 (async () => {
   try {
-    const [apiUrl, secretKey] = await Promise.all([
-      configService.getApiUrl(),
-      configService.getSecretKey(),
-    ]);
-    cachedApiUrl = apiUrl;
-    cachedSecretKey = secretKey;
-    console.log('Config cache initialized:', { apiUrl, secretKey: secretKey ? 'SET' : 'NOT SET' });
+    // Try sync access first (from injected config)
+    const syncApiUrl = configService.getApiUrlSync();
+    const syncSecretKey = configService.getSecretKeySync();
+
+    if (syncApiUrl && syncSecretKey) {
+      cachedApiUrl = syncApiUrl;
+      cachedSecretKey = syncSecretKey;
+      console.log('Config cache initialized from sync:', { apiUrl: syncApiUrl, secretKey: 'SET' });
+
+      // Configure the API client immediately
+      const { client } = await import('./api/client.gen');
+      client.setConfig({
+        baseUrl: syncApiUrl,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Secret-Key': syncSecretKey,
+        },
+      });
+    } else {
+      // Fall back to async loading
+      const [apiUrl, secretKey] = await Promise.all([
+        configService.getApiUrl(),
+        configService.getSecretKey(),
+      ]);
+      cachedApiUrl = apiUrl;
+      cachedSecretKey = secretKey;
+      console.log('Config cache initialized:', {
+        apiUrl,
+        secretKey: secretKey ? 'SET' : 'NOT SET',
+      });
+
+      // Configure the API client
+      const { client } = await import('./api/client.gen');
+      client.setConfig({
+        baseUrl: apiUrl,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Secret-Key': secretKey,
+        },
+      });
+    }
   } catch (error) {
     console.warn('Failed to initialize config cache:', error);
   }

@@ -78,10 +78,9 @@ async fn check_server_status(port: u16, max_attempts: u32) -> Result<bool, Strin
     Ok(false)
 }
 
-/// Start the goosed sidecar process
-#[tauri::command]
-pub async fn start_goosed<R: Runtime>(
-    app: AppHandle<R>,
+/// Internal function to start goosed
+pub async fn start_goosed_internal<R: Runtime>(
+    app: &AppHandle<R>,
     working_dir: Option<String>,
 ) -> Result<GoosedState, String> {
     let manager = app.state::<GoosedManager>();
@@ -163,6 +162,15 @@ pub async fn start_goosed<R: Runtime>(
     }
 
     Ok(state)
+}
+
+/// Start the goosed sidecar process (Tauri command)
+#[tauri::command]
+pub async fn start_goosed<R: Runtime>(
+    app: AppHandle<R>,
+    working_dir: Option<String>,
+) -> Result<GoosedState, String> {
+    start_goosed_internal(&app, working_dir).await
 }
 
 /// Get the current goosed state

@@ -27,10 +27,33 @@ pub fn run() {
                 )?;
             }
 
-            // Show window after state is restored
-            if let Some(window) = app.get_webview_window("main") {
-                window.show().unwrap();
-            }
+            // Start goosed in the background after window is created
+            let app_handle = app.handle().clone();
+            std::thread::spawn(move || {
+                let runtime = tokio::runtime::Runtime::new().unwrap();
+                runtime.block_on(async {
+                    // Small delay to ensure window is ready
+                    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+                    
+                    match goosed::start_goosed_internal(&app_handle, None).await {
+                        Ok(state) => {
+                            println!("Goosed started successfully on port {}", state.port);
+                            
+                            // Get window and show it
+                            if let Some(window) = app_handle.get_webview_window("main") {
+                                window.show().unwrap();
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!("Failed to start goosed: {}", e);
+                            // Show window anyway
+                            if let Some(window) = app_handle.get_webview_window("main") {
+                                window.show().unwrap();
+                            }
+                        }
+                    }
+                });
+            });
 
             Ok(())
         })

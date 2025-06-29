@@ -316,7 +316,6 @@ class ElectronCompat {
       this.eventCallbacks.set(channel, new Set());
     }
     this.eventCallbacks.get(channel)!.add(callback);
-    console.log(`Event listener registered for ${channel}`);
   }
 
   off(channel: string, callback: (...args: unknown[]) => void): void {
@@ -324,7 +323,6 @@ class ElectronCompat {
     if (callbacks) {
       callbacks.delete(callback);
     }
-    console.log(`Event listener removed for ${channel}`);
   }
 
   emit(channel: string, ...args: unknown[]): void {
@@ -410,18 +408,21 @@ class AppConfigCompat {
 
   private async loadInitialConfig() {
     try {
-      // Load common config values
-      // const { configService } = await import('./configService');
-      const { readConfig } = await import('../api');
+      // In Tauri mode, working directory is handled by goosed state
+      // Only try to load from backend API in Electron mode
+      if (!configService.isTauriApp()) {
+        // Load common config values
+        const { readConfig } = await import('../api');
 
-      // Try to load working directory
-      try {
-        const dir = await readConfig({ body: { key: 'GOOSE_WORKING_DIR', is_secret: false } });
-        if (dir.data) {
-          this.configCache.set('GOOSE_WORKING_DIR', dir.data);
+        // Try to load working directory
+        try {
+          const dir = await readConfig({ body: { key: 'GOOSE_WORKING_DIR', is_secret: false } });
+          if (dir.data) {
+            this.configCache.set('GOOSE_WORKING_DIR', dir.data);
+          }
+        } catch (error) {
+          console.log('Could not load GOOSE_WORKING_DIR');
         }
-      } catch (error) {
-        console.log('Could not load GOOSE_WORKING_DIR');
       }
 
       // Recipe config comes from window.electron.getConfig()
@@ -453,6 +454,39 @@ class AppConfigCompat {
 
   set(key: string, value: unknown): void {
     this.configCache.set(key, value);
+  }
+
+  getAll(): Record<string, unknown> {
+    const result: Record<string, unknown> = {};
+
+    // Add all cached values
+    this.configCache.forEach((value, key) => {
+      result[key] = value;
+    });
+
+    // Always include fresh recipeConfig if available
+    const electronConfig = electronCompat.getConfig();
+    if (electronConfig?.recipeConfig) {
+      result.recipeConfig = electronConfig.recipeConfig;
+    }
+
+    // Ensure GOOSE_WORKING_DIR has a default value
+    if (!result.GOOSE_WORKING_DIR) {
+      result.GOOSE_WORKING_DIR = '.';
+    }
+
+    // Ensure required AppConfig properties are present with defaults
+    if (!result.GOOSE_API_HOST) {
+      result.GOOSE_API_HOST = 'http://127.0.0.1';
+    }
+    if (result.GOOSE_PORT === undefined) {
+      result.GOOSE_PORT = null;
+    }
+    if (!result.secretKey) {
+      result.secretKey = '';
+    }
+
+    return result;
   }
 }
 
