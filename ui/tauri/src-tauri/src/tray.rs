@@ -100,6 +100,26 @@ pub fn destroy_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
 
 pub fn update_tray_menu<R: Runtime>(app: &AppHandle<R>, has_update: bool) -> tauri::Result<()> {
     if let Some(tray) = app.tray_by_id("main") {
+        // Update the icon based on update availability
+        let icon_bytes = if has_update {
+            if cfg!(target_os = "macos") {
+                include_bytes!("../icons/iconTemplateUpdate@2x.png").to_vec()
+            } else {
+                // For Windows/Linux, use the regular icon (they don't have template support)
+                include_bytes!("../icons/32x32.png").to_vec()
+            }
+        } else {
+            if cfg!(target_os = "macos") {
+                include_bytes!("../icons/iconTemplate@2x.png").to_vec()
+            } else {
+                include_bytes!("../icons/32x32.png").to_vec()
+            }
+        };
+        
+        let icon = Image::from_bytes(&icon_bytes)?;
+        tray.set_icon(Some(icon))?;
+        
+        // Update the menu
         let menu_builder = MenuBuilder::new(app);
 
         // Add update item if update is available

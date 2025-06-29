@@ -44,6 +44,9 @@ pub async fn check_for_update<R: Runtime>(
                     // Emit update available event
                     let _ = app.emit("updater://update-available", &info);
                     
+                    // Update tray icon to show update is available
+                    let _ = crate::tray::update_tray_menu(&app, true);
+                    
                     Ok(info)
                 }
                 Ok(None) => {
@@ -169,6 +172,9 @@ pub async fn install_update<R: Runtime>(
                             || {},
                         ).await {
                             Ok(_) => {
+                                // Reset tray icon to normal state
+                                let _ = crate::tray::update_tray_menu(&app, false);
+                                
                                 // The app will need to be relaunched manually
                                 // as tauri-plugin-updater v2 doesn't include relaunch
                                 Ok(())
@@ -185,6 +191,9 @@ pub async fn install_update<R: Runtime>(
                             || {},
                         ).await {
                             Ok(_) => {
+                                // Reset tray icon to normal state
+                                let _ = crate::tray::update_tray_menu(&app, false);
+                                
                                 // The app will need to be relaunched manually
                                 // as tauri-plugin-updater v2 doesn't include relaunch
                                 Ok(())
