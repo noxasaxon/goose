@@ -34,11 +34,16 @@ export const useDictationSettings = () => {
       // Load ElevenLabs API key from storage (non-secret for frontend access)
       try {
         const keyExists = await read(ELEVENLABS_API_KEY, true);
+        // For secret keys, the backend returns true if it exists, null if not
         if (keyExists === true) {
           setHasElevenLabsKey(true);
+        } else {
+          setHasElevenLabsKey(false);
         }
       } catch (error) {
+        // Only log unexpected errors
         console.error('[useDictationSettings] Error loading ElevenLabs API key:', error);
+        setHasElevenLabsKey(false);
       }
     };
 

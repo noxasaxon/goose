@@ -1,5 +1,6 @@
+// Import electronCompat early to ensure window.appConfig is available
+import './services/electronCompat';
 import { useEffect, useRef, useState } from 'react';
-import { IpcRendererEvent } from 'electron';
 import { openSharedSessionFromDeepLink, type SessionLinksViewOptions } from './sessionLinks';
 import { type SharedSessionDetails } from './sharedSessions';
 import { initializeSystem } from './utils/providerUtils';
@@ -120,6 +121,7 @@ export default function App() {
   const [extensionConfirmLabel, setExtensionConfirmLabel] = useState<string>('');
   const [extensionConfirmTitle, setExtensionConfirmTitle] = useState<string>('');
   const [{ view, viewOptions }, setInternalView] = useState<ViewConfig>(getInitialView());
+  const [workingDir, setWorkingDir] = useState<string>('.');
 
   const { getExtensions, addExtension, read } = useConfig();
   const initAttemptedRef = useRef(false);
@@ -148,11 +150,11 @@ export default function App() {
     }
     initAttemptedRef.current = true;
 
-    console.log(`Initializing app with settings v2`);
-
     const urlParams = new URLSearchParams(window.location.search);
     const viewType = urlParams.get('view');
-    const recipeConfig = window.appConfig.get('recipeConfig');
+    // Note: recipeConfig comes from window.electron.getConfig() for recipe editor deeplinks
+    const electronConfig = window.electron.getConfig();
+    const recipeConfig = electronConfig?.recipeConfig;
 
     if (viewType) {
       if (viewType === 'recipeEditor' && recipeConfig) {
@@ -222,9 +224,19 @@ export default function App() {
           return;
         }
 
-        const config = window.electron.getConfig();
-        const provider = (await read('GOOSE_PROVIDER', false)) ?? config.GOOSE_DEFAULT_PROVIDER;
-        const model = (await read('GOOSE_MODEL', false)) ?? config.GOOSE_DEFAULT_MODEL;
+        // Get default provider/model from backend config if not set
+        const provider = await read('GOOSE_PROVIDER', false);
+        const model = await read('GOOSE_MODEL', false);
+
+        // Try to load working directory from config
+        try {
+          const dir = (await read('GOOSE_WORKING_DIR', false)) as string;
+          if (dir) {
+            setWorkingDir(dir);
+          }
+        } catch (error) {
+          console.log('Could not load working directory from config');
+        }
 
         if (provider && model) {
           setView('chat');
@@ -278,7 +290,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const handleOpenSharedSession = async (_event: IpcRendererEvent, ...args: unknown[]) => {
+    const handleOpenSharedSession = async (...args: unknown[]) => {
       const link = args[0] as string;
       window.electron.logInfo(`Opening shared session from deep link ${link}`);
       setIsLoadingSharedSession(true);
@@ -310,9 +322,8 @@ export default function App() {
       if ((isMac ? event.metaKey : event.ctrlKey) && event.key === 'n') {
         event.preventDefault();
         try {
-          const workingDir = window.appConfig.get('GOOSE_WORKING_DIR');
           console.log(`Creating new chat window with working dir: ${workingDir}`);
-          window.electron.createChatWindow(undefined, workingDir as string);
+          window.electron.createChatWindow(undefined, workingDir);
         } catch (error) {
           console.error('Error creating new window:', error);
         }
@@ -322,11 +333,11 @@ export default function App() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [workingDir]);
 
   useEffect(() => {
     console.log('Setting up fatal error handler');
-    const handleFatalError = (_event: IpcRendererEvent, ...args: unknown[]) => {
+    const handleFatalError = (...args: unknown[]) => {
       const errorMessage = args[0] as string;
       console.error('Encountered a fatal error: ', errorMessage);
       console.error('Current view:', view);
@@ -341,7 +352,7 @@ export default function App() {
 
   useEffect(() => {
     console.log('Setting up view change handler');
-    const handleSetView = (_event: IpcRendererEvent, ...args: unknown[]) => {
+    const handleSetView = (...args: unknown[]) => {
       const newView = args[0] as View;
       const section = args[1] as string | undefined;
       console.log(
@@ -385,7 +396,7 @@ export default function App() {
 
   useEffect(() => {
     console.log('Setting up extension handler');
-    const handleAddExtension = async (_event: IpcRendererEvent, ...args: unknown[]) => {
+    const handleAddExtension = async (...args: unknown[]) => {
       const link = args[0] as string;
       try {
         console.log(`Received add-extension event with link: ${link}`);
@@ -459,7 +470,7 @@ export default function App() {
   }, [STRICT_ALLOWLIST]);
 
   useEffect(() => {
-    const handleFocusInput = (_event: IpcRendererEvent, ..._args: unknown[]) => {
+    const handleFocusInput = (..._args: unknown[]) => {
       const inputField = document.querySelector('input[type="text"], textarea') as HTMLInputElement;
       if (inputField) {
         inputField.focus();
@@ -536,7 +547,6 @@ export default function App() {
         />
       )}
       <div className="relative w-screen h-screen overflow-hidden bg-bgApp flex flex-col">
-        <div className="titlebar-drag-region" />
         <div>
           {view === 'loading' && <SuspenseLoader />}
           {view === 'welcome' && (
@@ -607,7 +617,7 @@ export default function App() {
       </div>
       {isGoosehintsModalOpen && (
         <GoosehintsModal
-          directory={window.appConfig.get('GOOSE_WORKING_DIR') as string}
+          directory={workingDir}
           setIsGoosehintsModalOpen={setIsGoosehintsModalOpen}
         />
       )}

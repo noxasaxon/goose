@@ -4,6 +4,8 @@ import { ConfigProvider } from './components/ConfigContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { patchConsoleLogging } from './utils';
 import SuspenseLoader from './suspense-loader';
+// Import electron compatibility layer for Tauri
+import './services/electronCompat';
 
 patchConsoleLogging();
 

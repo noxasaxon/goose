@@ -88,8 +88,10 @@ export const ModelAndProviderProvider: React.FC<ModelAndProviderProviderProps> =
   );
 
   const getFallbackModelAndProvider = useCallback(async () => {
-    const provider = window.appConfig.get('GOOSE_DEFAULT_PROVIDER') as string;
-    const model = window.appConfig.get('GOOSE_DEFAULT_MODEL') as string;
+    // In Tauri, we don't have default provider/model from backend
+    // Just return empty values and let the user configure
+    const provider = '';
+    const model = '';
     if (provider && model) {
       try {
         await upsert('GOOSE_MODEL', model, false);

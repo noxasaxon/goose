@@ -1,4 +1,4 @@
-import { getApiUrl, getSecretKey } from '../config';
+import { getApiUrlSync, getSecretKeySync } from '../config';
 import { FullExtensionConfig } from '../extensions';
 import { initializeAgent } from '../agent';
 import {
@@ -141,11 +141,11 @@ export const initializeSystem = async (
     const recipeConfig = window.appConfig?.get?.('recipeConfig');
     const botPrompt = (recipeConfig as { instructions?: string })?.instructions;
     // Extend the system prompt with desktop-specific information
-    const response = await fetch(getApiUrl('/agent/prompt'), {
+    const response = await fetch(getApiUrlSync('/agent/prompt'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Secret-Key': getSecretKey(),
+        'X-Secret-Key': getSecretKeySync(),
       },
       body: JSON.stringify({
         extension: botPrompt

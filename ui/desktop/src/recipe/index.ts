@@ -1,5 +1,5 @@
 import { Message } from '../types/message';
-import { getApiUrl } from '../config';
+import { getApiUrlSync, getSecretKeySync } from '../config';
 import { FullExtensionConfig } from '../extensions';
 
 export interface Recipe {
@@ -39,7 +39,7 @@ export interface CreateRecipeResponse {
 }
 
 export async function createRecipe(request: CreateRecipeRequest): Promise<CreateRecipeResponse> {
-  const url = getApiUrl('/recipe/create');
+  const url = getApiUrlSync('/recipe/create');
   console.log('Creating recipe at:', url);
   console.log('Request:', JSON.stringify(request, null, 2));
 
@@ -47,6 +47,7 @@ export async function createRecipe(request: CreateRecipeRequest): Promise<Create
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'X-Secret-Key': getSecretKeySync(),
     },
     body: JSON.stringify(request),
   });

@@ -7,7 +7,8 @@ import React, {
   createContext,
   useContext,
 } from 'react';
-import { getApiUrl } from '../config';
+import { getApiUrl, getApiUrlSync } from '../config';
+import { configService } from '../services/configService';
 import FlappyGoose from './FlappyGoose';
 import GooseMessage from './GooseMessage';
 import ChatInput from './ChatInput';
@@ -122,6 +123,7 @@ function ChatContent({
     };
   }>({});
   const [readyForAutoUserPrompt, setReadyForAutoUserPrompt] = useState(false);
+  const [workingDir, setWorkingDir] = useState<string>('.');
 
   const scrollRef = useRef<ScrollAreaHandle>(null);
   const { currentModel, currentProvider } = useModelAndProvider();
@@ -144,13 +146,51 @@ function ChatContent({
     window.electron.logInfo(
       'Initial messages when resuming session: ' + JSON.stringify(chat.messages, null, 2)
     );
-    // Set ready for auto user prompt after component initialization
-    setReadyForAutoUserPrompt(true);
+    // Load working directory from config
+    const loadConfig = async () => {
+      try {
+        // Initialize API URL cache
+        await getApiUrl('');
+
+        // Try backend config first
+        const response = await configService.getConfig();
+        if (response.GOOSE_PORT) {
+          // In Tauri mode, working directory is already set from goosed state
+          // Only try to load from backend API in Electron mode
+          if (!configService.isTauriApp()) {
+            try {
+              const { readConfig } = await import('../api');
+              const dir = await readConfig({
+                body: { key: 'GOOSE_WORKING_DIR', is_secret: false },
+              });
+              if (dir.data) {
+                setWorkingDir(dir.data as string);
+              }
+            } catch (error) {
+              console.log('Could not load working directory from config');
+            }
+          } else {
+            // In Tauri mode, get working directory from appConfig (set by configService)
+            const workingDirFromConfig = window.appConfig?.get('GOOSE_WORKING_DIR');
+            if (workingDirFromConfig && typeof workingDirFromConfig === 'string') {
+              setWorkingDir(workingDirFromConfig);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load config:', error);
+      } finally {
+        // Set ready for auto user prompt after component initialization
+        setReadyForAutoUserPrompt(true);
+      }
+    };
+    loadConfig();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array means this runs once on mount;
 
-  // Get recipeConfig directly from appConfig
-  const recipeConfig = window.appConfig.get('recipeConfig') as Recipe | null;
+  // Get recipeConfig from window.electron for recipe editor deeplinks
+  const electronConfig = window.electron.getConfig();
+  const recipeConfig = electronConfig?.recipeConfig as Recipe | null;
 
   // Store message in global history when it's added
   const storeMessageInHistory = useCallback((message: Message) => {
@@ -178,11 +218,11 @@ function ChatContent({
     currentModelInfo,
     sessionMetadata,
   } = useMessageStream({
-    api: getApiUrl('/reply'),
+    api: getApiUrlSync('/reply'),
     initialMessages: chat.messages,
     body: {
       session_id: chat.id,
-      session_working_dir: window.appConfig.get('GOOSE_WORKING_DIR'),
+      session_working_dir: workingDir,
       ...(recipeConfig?.scheduledJobId && { scheduled_job_id: recipeConfig.scheduledJobId }),
     },
     onFinish: async (_message, _reason) => {
@@ -235,7 +275,7 @@ function ChatContent({
       if (summarizedThread.length > 0 && updateMessageStreamBody) {
         updateMessageStreamBody({
           session_id: newSessionId,
-          session_working_dir: window.appConfig.get('GOOSE_WORKING_DIR'),
+          session_working_dir: workingDir,
         });
       }
     }
@@ -723,7 +763,7 @@ function ChatContent({
                             messages={messages}
                             messageId={message.id ?? message.created.toString()}
                             chatId={chat.id}
-                            workingDir={window.appConfig.get('GOOSE_WORKING_DIR') as string}
+                            workingDir={workingDir}
                             contextType={getContextHandlerType(message)}
                           />
                         ) : (
@@ -738,7 +778,7 @@ function ChatContent({
                             messages={messages}
                             messageId={message.id ?? message.created.toString()}
                             chatId={chat.id}
-                            workingDir={window.appConfig.get('GOOSE_WORKING_DIR') as string}
+                            workingDir={workingDir}
                             contextType={getContextHandlerType(message)}
                           />
                         ) : (

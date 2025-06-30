@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goose Sidecar Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .stop {
+            background: #f44336;
+        }
+        .stop:hover {
+            background: #da190b;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            background: #e8f4f8;
+            border: 1px solid #b3d9e6;
+        }
+        .error {
+            background: #ffebee;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .actions {
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🪿 Goose Sidecar Test</h1>
+        
+        <div class="actions">
+            <button id="startBtn" onclick="startGoosed()">Start Goosed</button>
+            <button id="statusBtn" onclick="getStatus()">Get Status</button>
+            <button id="stopBtn" onclick="stopGoosed()" class="stop">Stop Goosed</button>
+            <button id="testApiBtn" onclick="testApi()" disabled>Test API</button>
+        </div>
+        
+        <div id="status" class="status">
+            Ready to test sidecar functionality
+        </div>
+        
+        <h3>State:</h3>
+        <pre id="state">No state yet</pre>
+    </div>
+
+    <script type="module">
+        import { invoke } from '@tauri-apps/api/core';
+        
+        let currentState = null;
+        
+        window.updateStatus = function(message, type = 'info') {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = 'status ' + type;
+        };
+        
+        window.updateState = function(state) {
+            document.getElementById('state').textContent = 
+                state ? JSON.stringify(state, null, 2) : 'No state';
+        };
+        
+        window.startGoosed = async function() {
+            try {
+                updateStatus('Starting goosed...', 'info');
+                document.getElementById('startBtn').disabled = true;
+                
+                const state = await invoke('start_goosed', {
+                    workingDir: null
+                });
+                
+                currentState = state;
+                updateStatus(`Goosed started on port ${state.port}`, 'success');
+                updateState(state);
+                
+                document.getElementById('testApiBtn').disabled = false;
+                document.getElementById('startBtn').disabled = false;
+            } catch (error) {
+                updateStatus(`Error: ${error}`, 'error');
+                document.getElementById('startBtn').disabled = false;
+            }
+        };
+        
+        window.getStatus = async function() {
+            try {
+                const state = await invoke('get_goosed_state');
+                currentState = state;
+                updateState(state);
+                
+                if (state) {
+                    updateStatus(`Goosed is running on port ${state.port}`, 'success');
+                    document.getElementById('testApiBtn').disabled = false;
+                } else {
+                    updateStatus('Goosed is not running', 'info');
+                    document.getElementById('testApiBtn').disabled = true;
+                }
+            } catch (error) {
+                updateStatus(`Error: ${error}`, 'error');
+            }
+        };
+        
+        window.stopGoosed = async function() {
+            try {
+                updateStatus('Stopping goosed...', 'info');
+                await invoke('stop_goosed');
+                
+                currentState = null;
+                updateStatus('Goosed stopped', 'success');
+                updateState(null);
+                document.getElementById('testApiBtn').disabled = true;
+            } catch (error) {
+                updateStatus(`Error: ${error}`, 'error');
+            }
+        };
+        
+        window.testApi = async function() {
+            if (!currentState || !currentState.port) {
+                updateStatus('No goosed instance running', 'error');
+                return;
+            }
+            
+            try {
+                updateStatus('Testing API endpoint...', 'info');
+                const response = await fetch(`http://127.0.0.1:${currentState.port}/status`);
+                
+                if (response.ok) {
+                    const data = await response.text();
+                    updateStatus(`API test successful! Response: ${data}`, 'success');
+                } else {
+                    updateStatus(`API test failed: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                updateStatus(`API test error: ${error}`, 'error');
+            }
+        };
+        
+        // Check initial status
+        window.getStatus();
+    </script>
+</body>
+</html>

@@ -6,11 +6,16 @@ interface initializeAgentProps {
 }
 
 export async function initializeAgent({ model, provider }: initializeAgentProps) {
-  const response = await fetch(getApiUrl('/agent/update_provider'), {
+  const [apiUrl, secretKey] = await Promise.all([
+    getApiUrl('/agent/update_provider'),
+    getSecretKey(),
+  ]);
+
+  const response = await fetch(apiUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Secret-Key': getSecretKey(),
+      'X-Secret-Key': secretKey,
     },
     body: JSON.stringify({
       provider: provider.toLowerCase().replace(/ /g, '_'),
